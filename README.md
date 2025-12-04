@@ -2,15 +2,6 @@
 
 A comprehensive workflow that provides AI-powered telehealth consultations via Telegram, featuring specialist agents for triage, symptom analysis, diagnosis, treatment planning, mental health counseling, and prescription management.
 
-## Demo
-
-<div align="center">
-  <video src="https://github.com/parth-mota/Telehealth-Ai-Avatar-Chatbot/assets/135701981/demo.mp4" controls width="100%" max-width="800px">
-    Your browser does not support the video tag.
-  </video>
-</div>
-
-*Watch the AI doctor in action responding to patient queries*
 
 ## Features
 

@@ -1,6 +1,10 @@
 # Telehealth AI Avatar
 
-A comprehensive n8n workflow that provides AI-powered telehealth consultations via Telegram, featuring specialist agents for triage, symptom analysis, diagnosis, treatment planning, mental health counseling, and prescription management.
+A comprehensive workflow that provides AI-powered telehealth consultations via Telegram, featuring specialist agents for triage, symptom analysis, diagnosis, treatment planning, mental health counseling, and prescription management.
+
+## Demo
+
+https://github.com/parth-mota/Telehealth-Ai-Avatar-Chatbot/assets/135701981/demo.mp4
 
 ## Features
 

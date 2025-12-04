@@ -1,0 +1,1854 @@
+{
+  "name": "Telehealth AI Avatar",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "=You are Dr. Sarah, a caring and experienced telehealth physician.\n\nTalk naturally like you would in a real clinic visit. Adjust your response based on the situation:\n\n🚨 EMERGENCIES (chest pain, can't breathe, severe bleeding):\n→ 1-2 sentences, urgent and direct\n\"This is serious. Call 911 now. Don't drive yourself.\"\n\n⚠️ URGENT ISSUES (severe pain 7-10/10, high fever, worrying symptoms):\n→ 2-4 sentences, thorough with clear instructions\n\"That's concerning. This could be X. Go to ER within 1-2 hours. Watch for these signs...\"\n\n✅ ROUTINE PROBLEMS (cold, flu, minor issues):\n→ 3-5 sentences, take time to educate\n\"Sounds like a cold. Here's what's happening... Try these remedies... You should feel better in X days...\"\n\n💚 MENTAL HEALTH (depression, anxiety):\n→ 4-6 sentences, compassionate and thorough\n\"I hear you. What you're describing is treatable... Here are your options... You're not alone...\"\n\n🤔 CLARIFYING (need more info):\n→ 1-2 sentences, conversational\n\"How long have you had this?\"\n\nKEY PRINCIPLES:\n- Use natural, warm language (like talking to a friend)\n- No medical jargon\n- Match response length to severity\n- Be empathetic\n- Be concise and clear\n- Give clear next steps\n- Always tell them when to seek further care\n\nYou have 6 specialist colleagues to help you. Use them strategically:\n\n🔴 TRIAGE SPECIALIST - Use when:\n- Patient describes concerning symptoms (chest pain, breathing issues, severe pain)\n- You need to assess urgency level\n- Example: \"I have chest pain\" → Use triage_specialist\n\n🔍 SYMPTOM ANALYZER - Use when:\n- Patient describes multiple symptoms\n- You need to understand symptom patterns\n- Symptoms are unclear or complex\n- Example: \"I've been feeling sick with headache, fever, and nausea\" → Use symptom_analyzer\n\n🩺 DIAGNOSIS ASSISTANT - Use when:\n- After analyzing symptoms, need to identify possible conditions\n- Patient asks \"what could this be?\"\n- Multiple symptoms point to specific conditions\n- Example: After symptom analysis → Use diagnosis_assistant\n\n💊 TREATMENT PLANNER - Use when:\n- Diagnosis is clear and patient needs treatment advice\n- Patient asks \"what should I do?\" or \"how do I treat this?\"\n- Need to create care plan\n- Example: \"How do I treat my cold?\" → Use treatment_planner\n\n🔬 PRESCRIPTION MANAGER - Use when:\n- Patient mentions medications\n- Discussing drug interactions\n- Patient asks about taking specific medicines\n- Example: \"Can I take ibuprofen with my other meds?\" → Use prescription_manager\n\n🧠 MENTAL HEALTH COUNSELOR - Use when:\n- Patient mentions depression, anxiety, stress, sadness\n- Mental health concerns\n- Emotional distress\n- Example: \"I've been feeling really down\" → Use mental_health_counselor\n\nTYPICAL WORKFLOW EXAMPLES:\n\nExample 1 - Symptom Question:\nPatient: \"I have a bad headache and fever\"\nYour process:\n1. Use symptom_analyzer (to understand symptoms)\n2. Use diagnosis_assistant (to identify likely cause)\n3. Use treatment_planner (to provide care advice)\n4. Synthesize into natural response\n\nExample 2 - Treatment Question:\nPatient: \"How do I treat a cold?\"\nYour process:\n1. Use treatment_planner directly\n2. Provide their recommendations naturally\n\nExample 3 - Emergency:\nPatient: \"My chest hurts badly\"\nYour process:\n1. Use triage_specialist (assess urgency)\n2. Based on result, either tell them to call 911 or continue evaluation\n\nExample 4 - Medication:\nPatient: \"Can I take Tylenol with my blood pressure meds?\"\nYour process:\n1. Use prescription_manager\n2. Share their safety assessment\n\nCRITICAL RULES:\n✅ Use tools when you need expert input\n✅ Don't just use triage for everything - match the tool to the question\n✅ For diagnosis questions → use symptom_analyzer + diagnosis_assistant\n✅ For treatment questions → use treatment_planner\n✅ For medication questions → use prescription_manager\n✅ Translate tool outputs into natural, conversational language\n✅ Never show raw tool outputs to patient\n\nAfter getting tool results, synthesize them into natural, warm advice. Adjust response length based on severity (2-3 sentences for emergencies, 6-10 for routine care).\n"
+        }
+      },
+      "id": "55e8be53-aeaf-4518-a0e5-721205f6bbaa",
+      "name": "Appointment System",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [
+        2816,
+        288
+      ],
+      "typeVersion": 2.1
+    },
+    {
+      "parameters": {
+        "jsCode": "// For your specific Telegram/Extract_Content payload structure\nconst data = items[0].json;\n\n// Extract from your format\nconst patient_id = $('patient context').first().json.patient_id;\nconst patient_name = $('patient context').first().json.user_name || 'Patient';\nconst processed_input = $('patient context').first().json.text_content || data.processed_input || null;\nconst input_type = $('patient context').first().json.input_type || 'text';\n\n// Validate\nif (!patient_id) throw new Error('No patient_id');\nif (!processed_input) throw new Error('No message content');\n\nreturn [\n  {\n    json: {\n      patient_id: patient_id,\n      patient_name: patient_name,\n      processed_input: processed_input,\n      input_type: input_type,\n      timestamp: data.timestamp || new Date().toISOString()\n    }\n  }\n];\n"
+      },
+      "id": "e8b0198f-0f1a-4f3e-82aa-a4fd11756831",
+      "name": "PrepareInput",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        544,
+        656
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "924ad748-14b9-4f08-a13b-c8b602c09e4a",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              },
+              "leftValue": "={{ $json.chatInput }}",
+              "rightValue": "null"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "518e06dc-11ff-4922-9a61-3b2424a2aa11",
+      "name": "If",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        1872,
+        288
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "f2e2dbb1-7d6c-4592-a078-6541d92b871c",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "leftValue": "={{ $('patient context').item.json.input_type }}",
+                    "rightValue": "image"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Image"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "d97e949b-6df1-457b-9393-91726db54083",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "leftValue": "={{ $('patient context').item.json.input_type }}",
+                    "rightValue": "document"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Document"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "f57a6d2f-97bf-4d0b-860f-3addbe4b91f7",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "leftValue": "={{ $('patient context').item.json.input_type }}",
+                    "rightValue": "audio"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Audio"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "id": "741680c0-96e2-4845-b342-5d237c452011",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "leftValue": "={{ $('patient context').item.json.input_type }}",
+                    "rightValue": "text"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Text"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "3e3920c6-6c14-4231-9fa1-7ac4d85ac856",
+      "name": "Switch",
+      "type": "n8n-nodes-base.switch",
+      "position": [
+        -96,
+        256
+      ],
+      "typeVersion": 3.2
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7e03f0fa-b2ce-4a63-aaf1-b5a94ffec5a5",
+              "name": "sessionId",
+              "type": "string",
+              "value": "={{ $('WATrigger').item.json.contacts[0].wa_id }}"
+            },
+            {
+              "id": "491716ee-ed67-4440-aee5-28d808af85f2",
+              "name": "chatInput",
+              "type": "string",
+              "value": "={{ $json.text }}"
+            },
+            {
+              "id": "1fad22a7-35f1-48c5-b0a2-58a51d7a2537",
+              "name": "mode",
+              "type": "string",
+              "value": "audio"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "70bc91ce-609e-4814-ad84-927e41dbe6f3",
+      "name": "Audio Prompt",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1440,
+        384
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1bfd77fe-a9f8-4563-a948-924dc535d4eb",
+              "name": "sessionId",
+              "type": "string",
+              "value": "={{ $('patient context').item.json.patient_id }}"
+            },
+            {
+              "id": "7b201648-2d56-462b-ba8c-21477353aad5",
+              "name": "action",
+              "type": "string",
+              "value": "sendMessage"
+            },
+            {
+              "id": "abb84573-fdf4-4f35-b58b-07c3a2fcecd6",
+              "name": "chatInput",
+              "type": "string",
+              "value": "={{ $('patient context').item.json.text_content }}"
+            },
+            {
+              "id": "993edb48-4b6d-485c-9777-c3ce279cba72",
+              "name": "mode",
+              "type": "string",
+              "value": "text"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "edd01233-9ede-4a41-acb6-ebf6916fdd1b",
+      "name": "Text Prompt",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1232,
+        576
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "input": "={{ $json.output }}",
+        "voice": "fable",
+        "options": {}
+      },
+      "id": "63392b56-070b-440f-b107-b7e53aee73f1",
+      "name": "Generate Audio",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "position": [
+        5696,
+        32
+      ],
+      "typeVersion": 1.8,
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_CREDENTIAL_ID_HERE",
+          "name": "OpenAi account 2"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "9eda56be-322f-44cd-9baa-4bb1495aff14",
+              "operator": {
+                "name": "filter.operator.equals",
+                "type": "string",
+                "operation": "equals"
+              },
+              "leftValue": "={{ $('If').item.json.mode }}",
+              "rightValue": "audio"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "33bd9dcb-4c61-4960-92a7-28b6f98cf8e2",
+      "name": "response",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        4880,
+        288
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and change the MIME type of binary data\nfor (const item of $input.all()) {\n  // Check if the item has binary data\n  if (item.binary) {\n    // Find the binary property name (assuming there's at least one)\n    const binaryPropertyNames = Object.keys(item.binary);\n\n    for (const propName of binaryPropertyNames) {\n      // If the MIME type is 'audio/mp3', change it to 'audio/mpeg'\n      if (item.binary[propName].mimeType === \"audio/mp3\") {\n        item.binary[propName].mimeType = \"audio/mpeg\";\n      }\n    }\n  }\n}\n\nreturn $input.all();"
+      },
+      "id": "70557384-53e4-435a-92e4-2a96bd4aff59",
+      "name": "Code",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        5968,
+        32
+      ],
+      "typeVersion": 2,
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "03affec6-8e7b-459d-a08a-c9af2660e319",
+              "operator": {
+                "name": "filter.operator.equals",
+                "type": "string",
+                "operation": "equals"
+              },
+              "leftValue": "={{ $json.mime_type }}",
+              "rightValue": "application/pdf"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "fbe5feca-e405-4ff1-97af-c3a8472e1e8d",
+      "name": "If PDF File",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        736,
+        192
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "id": "3e08dad4-7564-4df1-8ead-199bb5fd692c",
+      "name": "Extract from PDF File",
+      "type": "n8n-nodes-base.extractFromFile",
+      "position": [
+        1008,
+        192
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7e03f0fa-b2ce-4a63-aaf1-b5a94ffec5a5",
+              "name": "sessionId",
+              "type": "string",
+              "value": "={{ $('WATrigger').item.json.contacts[0].wa_id }}"
+            },
+            {
+              "id": "491716ee-ed67-4440-aee5-28d808af85f2",
+              "name": "chatInput",
+              "type": "string",
+              "value": "={{ $json.text }}"
+            },
+            {
+              "id": "1fad22a7-35f1-48c5-b0a2-58a51d7a2537",
+              "name": "mode",
+              "type": "string",
+              "value": "document"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "989c5f50-5faa-4b8d-9122-47e829fac5a8",
+      "name": "Document Prompt",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1232,
+        192
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7e03f0fa-b2ce-4a63-aaf1-b5a94ffec5a5",
+              "name": "sessionId",
+              "type": "string",
+              "value": "={{ $('Get a file1').item.json.result.file_id }}"
+            },
+            {
+              "id": "491716ee-ed67-4440-aee5-28d808af85f2",
+              "name": "chatInput",
+              "type": "string",
+              "value": "={{ $json.content }}"
+            },
+            {
+              "id": "1fad22a7-35f1-48c5-b0a2-58a51d7a2537",
+              "name": "mode",
+              "type": "string",
+              "value": "image"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c555463b-5bfd-442f-8235-ce6f9c92fe61",
+      "name": "Image Prompt",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1440,
+        0
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {
+          "download": true
+        }
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -752,
+        288
+      ],
+      "id": "d38fc689-226b-43c4-a3a3-edc0993e827e",
+      "name": "Telegram Trigger",
+      "webhookId": "YOUR_WEBHOOK_ID_HERE",
+      "credentials": {
+        "telegramApi": {
+          "id": "YOUR_CREDENTIAL_ID_HERE",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const message = $json.message;\nlet input_type = \"text\";\nlet file_path = null;\nlet file_id = null;\n\nif (message.audio) {\n  input_type = \"audio\";\n  file_id = message.audio.file_id;\n} else if (message.photo) {\n  input_type = \"image\";\n  file_id = message.photo[message.photo.length - 1].file_id;\n} else if (message.document?.mime_type?.includes('audio')) {\n  input_type = \"audio\";\n  file_id = message.document.file_id;\n} else if (message.voice) {\n  input_type = \"voice\";\n  file_id = message.voice.file_id;\n}\n\nreturn {\n  patient_id: message.chat.id,\n  user_name: message.from?.first_name || \"Patient\",\n  input_type: input_type,\n  file_id: file_id,\n  text_content: message.text || \"\",\n  message_id: message.message_id,\n  timestamp: new Date().toISOString()\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -544,
+        288
+      ],
+      "id": "1559bd95-59f9-47fe-8521-02686c339302",
+      "name": "patient context"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        2864,
+        512
+      ],
+      "id": "d54fecc5-0d38-4348-8bf7-3803bf30f4bd",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryManager",
+      "typeVersion": 1.1,
+      "position": [
+        -368,
+        288
+      ],
+      "id": "2ef6c4d1-2c70-4ad6-b0ab-ca87f9fc7b8b",
+      "name": "Chat Memory Manager"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.patient_id }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -368,
+        496
+      ],
+      "id": "f5861f18-83a3-4ef8-a1e7-b24daf5a744f",
+      "name": "Simple Memory1"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $('patient context').item.json.file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        144,
+        -16
+      ],
+      "id": "6edd9499-9cd0-4d7f-a9db-ca53d6c9b24a",
+      "name": "Get a file1",
+      "webhookId": "YOUR_WEBHOOK_ID_HERE",
+      "credentials": {
+        "telegramApi": {
+          "id": "YOUR_CREDENTIAL_ID_HERE",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "image",
+        "operation": "analyze",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.0-flash",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.0-flash"
+        },
+        "text": "What's in this image?Please analyze this image and tell me what's in it. If it's a document, summarize the key details. If it's a photo, describe the contents.",
+        "inputType": "binary",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        432,
+        -16
+      ],
+      "id": "82a1fa0e-0cbe-48d3-b3b3-7a5a8e82a7bb",
+      "name": "Analyze an image",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YOUR_CREDENTIAL_ID_HERE",
+          "name": "Google Gemini(PaLM) Api account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $('patient context').item.json.file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        576,
+        400
+      ],
+      "id": "09544f4d-a870-41bb-bd6b-fe9c3de142f0",
+      "name": "Get a file",
+      "webhookId": "YOUR_WEBHOOK_ID_HERE",
+      "credentials": {
+        "telegramApi": {
+          "id": "YOUR_CREDENTIAL_ID_HERE",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-2.0-flash-lite",
+          "mode": "list",
+          "cachedResultName": "models/gemini-2.0-flash-lite"
+        },
+        "inputType": "binary",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1,
+      "position": [
+        896,
+        432
+      ],
+      "id": "f1a11591-121f-4fd9-9328-ca60badaafbe",
+      "name": "Transcribe a recording",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YOUR_CREDENTIAL_ID_HERE",
+          "name": "Google Gemini(PaLM) Api account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $('patient context').item.json.file_id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        464,
+        224
+      ],
+      "id": "9aaddc6c-f79d-4a02-87f9-0a424d68cd68",
+      "name": "Get a file2",
+      "webhookId": "YOUR_WEBHOOK_ID_HERE",
+      "credentials": {
+        "telegramApi": {
+          "id": "YOUR_CREDENTIAL_ID_HERE",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        2208,
+        448
+      ],
+      "id": "7de870c1-4700-408c-b858-8fe4d402bd69",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YOUR_CREDENTIAL_ID_HERE",
+          "name": "Google Gemini(PaLM) Api account 4"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        2304,
+        800
+      ],
+      "id": "144a03f7-9fd5-4b58-aa9a-80ada16e0a05",
+      "name": "Simple Memory2"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        3440,
+        704
+      ],
+      "id": "eb5ea51a-2728-425a-987a-ee882e5c83d5",
+      "name": "Simple Memory3"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        4080,
+        768
+      ],
+      "id": "d948d5d2-3405-4317-b53c-38325d64ebcb",
+      "name": "Simple Memory4"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        4368,
+        768
+      ],
+      "id": "786dc1c0-76b2-4e57-ae3f-0c9f753ba461",
+      "name": "Simple Memory5"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        4240,
+        752
+      ],
+      "id": "782ce71e-e969-4501-9afc-c11c0a0502cb",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YOUR_CREDENTIAL_ID_HERE",
+          "name": "Google Gemini(PaLM) Api account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        3968,
+        752
+      ],
+      "id": "2f996c98-1158-43cd-91bc-81025f8bd71c",
+      "name": "Google Gemini Chat Model2",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YOUR_CREDENTIAL_ID_HERE",
+          "name": "Google Gemini(PaLM) Api account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        3328,
+        752
+      ],
+      "id": "3d7e57a6-aebd-4e2b-8edc-a597aa92f80a",
+      "name": "Google Gemini Chat Model3",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YOUR_CREDENTIAL_ID_HERE",
+          "name": "Google Gemini(PaLM) Api account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        2192,
+        736
+      ],
+      "id": "c7cbc446-3c27-46b3-b806-f7fcf7be3c19",
+      "name": "Google Gemini Chat Model4",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YOUR_CREDENTIAL_ID_HERE",
+          "name": "Google Gemini(PaLM) Api account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendAudio",
+        "chatId": "={{ $('patient context').item.json.patient_id }}",
+        "binaryData": true,
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        6208,
+        32
+      ],
+      "id": "6ea8b791-b574-4b04-bc23-72e3d39e07dc",
+      "name": "Send an audio file",
+      "webhookId": "YOUR_WEBHOOK_ID_HERE",
+      "credentials": {
+        "telegramApi": {
+          "id": "YOUR_CREDENTIAL_ID_HERE",
+          "name": "Telegram account"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "toolDescription": "Use this tool when patient describes symptoms that might need emergency care. Assesses if patient needs: 911 immediate, ER within hours, urgent care, or routine doctor visit. Use for: chest pain, breathing problems, severe pain, bleeding, confusion, or any concerning symptoms.",
+        "text": "={{ $('If').item.json.chatInput }}",
+        "options": {
+          "systemMessage": "=You are an experienced ER triage nurse with 20 years experience.\n\nQuickly assess if this needs emergency care:\n\n🔴 LIFE-THREATENING (respond in 1 sentence):\n- Chest pain\n- Can't breathe\n- Severe bleeding\n- Unconscious\n- Stroke signs (face droop, arm weak, slurred speech)\n- Severe allergic reaction\nResponse: \"Call 911 immediately.\"\n\n🟠 URGENT (respond in 2 sentences):\n- Severe pain (8-10/10)\n- High fever with confusion\n- Suspected broken bone\n- Severe vomiting/dehydration\nResponse: \"This needs emergency care. Go to ER within 1-2 hours.\"\n\n🟢 ROUTINE (respond in 1 sentence):\n- Mild symptoms\n- Stable conditions\n- Minor concerns\nResponse: \"Not urgent. See your doctor within a few days.\"\n\nKeep it direct and clear. No long explanations.\n"
+        }
+      },
+      "id": "6d4de97d-24f2-4640-993c-1f72728e1d5b",
+      "name": "Triage Specialist Agent",
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "position": [
+        2352,
+        512
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "toolDescription": "Use this tool when patient describes symptoms and you need to understand what they mean. Analyzes symptom patterns, severity, duration, and associated symptoms. Use when: multiple symptoms, unclear presentation, or need to understand symptom significance before diagnosis.",
+        "text": "={{ $('If').item.json.chatInput }}",
+        "options": {
+          "systemMessage": "=You are a medical symptom analysis specialist.\n\nAnalyze the patient's symptoms and provide insights:\n\nFor SIMPLE symptoms (1-2 sentences):\n\"These symptoms - [list] - suggest [pattern]. The [key symptom] is particularly important because [reason]. Duration of [timeframe] indicates [acute/chronic].\"\n\nFor COMPLEX symptoms (2-4 sentences):\n\"Looking at the full picture: [symptom 1] started [when], [symptom 2] is [pattern], and [symptom 3] suggests [implication]. This pattern of [description] could indicate [possibilities]. The fact that [specific detail] is [significant/concerning] because [explanation]. I'd want to know more about [clarifying question].\"\n\nFocus on:\n- Pattern recognition\n- What's significant\n- What symptoms suggest\n- Timeline importance\n- What else to ask\n\nSpeak naturally like you're thinking through the case with a colleague.\n"
+        }
+      },
+      "id": "856849ac-629d-4a0a-9079-5e49f1b9f47d",
+      "name": "Symptom analyzer tool",
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "position": [
+        3248,
+        512
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "toolDescription": "Use this tool after symptom analysis to identify likely medical conditions. Provides differential diagnosis - what conditions could be causing the symptoms. Use when: symptoms are analyzed and you need to identify possible diagnoses, patient asks \"what is this?\", or planning treatment.",
+        "text": "={{ $('If').item.json.chatInput }}",
+        "options": {
+          "systemMessage": "=You are a diagnostic medicine specialist.\n\nBased on the symptoms provided, identify likely conditions:\n\nFor CLEAR diagnosis (1-2 sentences):\n\"Based on [key symptoms], this is most likely [condition]. Classic presentation includes [typical features]. Usually caused by [common cause].\"\n\nFor DIFFERENTIAL diagnosis (2-4 sentences):\n\"Given [symptoms], here's what we're looking at: Most likely [condition A] because [reasoning]. Could also be [condition B] if [other factors present]. Less commonly, [condition C] can present this way. Key distinguishing feature: [how to tell them apart]. The [specific symptom] makes me think [condition] is most probable.\"\n\nAlways:\n- Start with most likely\n- Explain reasoning simply  \n- Give 2-3 possibilities\n- Mention distinguishing features\n- Keep language natural\n\nYou're discussing cases with a colleague, not writing a textbook.\n"
+        }
+      },
+      "id": "ad23d6a9-7c2b-4611-a6ae-9bab6c743cb9",
+      "name": "Diagnosis assistant",
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "position": [
+        4016,
+        512
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "toolDescription": "Use this tool to create treatment plans and care advice. Provides specific remedies, medications, lifestyle changes, and follow-up guidance. Use when: diagnosis is clear, patient asks \"what should I do?\", need specific treatment recommendations, or creating care plans.",
+        "text": "={{ $('If').item.json.chatInput }}",
+        "options": {
+          "systemMessage": "=You are a treatment specialist who creates care plans.\n\nProvide practical treatment advice:\n\nFor SIMPLE issues (2-3 sentences):\n\"For [condition], here's what helps: [remedy 1], [remedy 2], [remedy 3]. You should feel better in [timeframe]. See a doctor if [warning signs].\"\n\nFor COMPLEX issues (4-6 sentences):\n\"Here's your care plan: First, [immediate step]. For symptom relief, try [specific remedies with doses if OTC]. [Lifestyle advice - rest, fluids, etc]. Avoid [what not to do]. You should start feeling better in [timeframe]. Warning signs to watch for: [red flags]. If you notice these, [what to do]. Follow up with your doctor in [timeframe].\"\n\nAlways include:\n- What to do right now\n- Specific remedies (with doses for OTC meds)\n- How long until improvement\n- Warning signs to watch for\n- When to follow up\n\nBe practical and specific. No vague advice.\n"
+        }
+      },
+      "id": "9a785c11-3355-4f43-bd4d-4f2c709c5eb2",
+      "name": "Treatment Planner",
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "position": [
+        4304,
+        512
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        2848,
+        704
+      ],
+      "id": "89183410-16d8-43e0-a165-0c3b67e54db6",
+      "name": "Google Gemini Chat Model5",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YOUR_CREDENTIAL_ID_HERE",
+          "name": "Google Gemini(PaLM) Api account 4"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        2992,
+        704
+      ],
+      "id": "812c4e57-18fe-4f42-9aba-30cb398110d9",
+      "name": "Simple Memory6"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Use this tool for mental health concerns including depression, anxiety, stress, grief, trauma, or emotional distress. Provides screening, assessment, coping strategies, and referral recommendations. Use when: patient mentions feeling down/anxious/stressed, emotional concerns, or psychological symptoms.",
+        "text": "={{ $('If').item.json.chatInput }}",
+        "options": {
+          "systemMessage": "=You are a compassionate mental health counselor and psychiatrist.\n\nProvide mental health support based on what the patient shares:\n\nFor MILD concerns (1-3 sentences):\n\"What you're describing - [symptoms] - sounds like [condition, e.g., stress, mild anxiety]. This is very common and treatable. Here are some things that can help: [2-3 coping strategies]. If it continues or gets worse, I'd recommend seeing a therapist or counselor.\"\n\nFor MODERATE concerns (3-5 sentences):\n\"I hear you, and I'm glad you're reaching out. What you're experiencing - [symptoms] - are symptoms of [condition]. This affects [how common] and is very treatable. It's caused by [simple explanation], not something you did wrong. Treatment typically involves [therapy type] and sometimes [medication if appropriate]. Things you can try now: [specific coping strategies]. I recommend seeing a mental health professional within [timeframe]. You don't have to go through this alone.\"\n\nFor CRISIS (1-2 sentences + resources):\n\"I'm very concerned about your safety. Please call 988 (Suicide & Crisis Lifeline) or 911 right now. They have trained counselors available 24/7. Will you call them?\"\n\nAlways:\n- Be warm and non-judgmental\n- Validate their feelings\n- Provide specific coping strategies\n- Give clear next steps\n- Include resources\n- Check for safety if concerning\n\nSpeak with compassion like you're talking to someone you care about.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 2.2,
+      "position": [
+        2976,
+        496
+      ],
+      "id": "b6108d1b-31d9-40fb-ae5c-066f3bdad6fb",
+      "name": "Mental Health Counselor"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Use this tool for all medication-related questions. Checks drug interactions, dosing, safety, and side effects. Use when: patient mentions taking medications, asks about drug interactions, wants to know if medication is safe, or discussing prescriptions.",
+        "text": "={{ $('If').item.json.chatInput }}",
+        "options": {
+          "systemMessage": "=You are a clinical pharmacist checking medication safety.\n\nCheck for drug interactions, allergies, and safety:\n\nNO ISSUES (1 sentence):\n\"That medication should be fine for you.\"\n\nMINOR CONCERN (1-2 sentences):\n\"That's generally safe. Take it with food to avoid stomach upset. Common side effects are [list]. Call if [concerning symptom].\"\n\nINTERACTION FOUND (3-4 sentences):\n\"I'm concerned about an interaction. [Drug A] and [Drug B] together can [risk]. This increases your chance of [problem]. We should use [alternative] instead, which works similarly but is safer with your other medications. Talk to your doctor about switching.\"\n\nALLERGY CONCERN (2-3 sentences):\n\"You're allergic to [drug family]. [Proposed med] is in that same family and could cause a reaction. Symptoms could include [reaction signs]. We need a different option - [alternative] is a good choice that's not related.\"\n\nBe clear about safety concerns. When there's risk, explain it simply and offer alternatives.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 2.2,
+      "position": [
+        2544,
+        800
+      ],
+      "id": "ec237e9e-9544-4930-97a9-d3f9532f09a1",
+      "name": "Prescription manager tool"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        2416,
+        1008
+      ],
+      "id": "2dacb993-8092-4101-8662-6d745450a129",
+      "name": "Google Gemini Chat Model6",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YOUR_CREDENTIAL_ID_HERE",
+          "name": "Google Gemini(PaLM) Api account 4"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        2560,
+        1008
+      ],
+      "id": "43b760dc-56f4-49bb-b9c2-9df6352b471f",
+      "name": "Simple Memory7"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Parse AI agent output and convert to clean text only\n// Remove all formatting, JSON, metadata, etc.\n\nconst rawOutput =$input.first().json.output;\n\n// Function to extract plain text\nfunction extractPlainText(text) {\n  let cleaned = text;\n  \n  // Remove JSON formatting if present\n  try {\n    if (cleaned.trim().startsWith('{') || cleaned.trim().startsWith('[')) {\n      const parsed = JSON.parse(cleaned);\n      if (parsed.message) cleaned = parsed.message;\n      else if (parsed.text) cleaned = parsed.text;\n      else if (parsed.response) cleaned = parsed.response;\n      else cleaned = JSON.stringify(parsed);\n    }\n  } catch (e) {\n    // Not JSON, continue with text processing\n  }\n  \n  // Remove markdown formatting\n  cleaned = cleaned\n    .replace(/\\*\\*(.+?)\\*\\*/g, '$1')  // Remove bold **text**\n    .replace(/\\*(.+?)\\*/g, '$1')      // Remove italic *text*\n    .replace(/``````/g, '')   // Remove code blocks\n    .replace(/`(.+?)`/g, '$1')        // Remove inline code\n    .replace(/#{1,6}\\s/g, '')         // Remove headers\n    .replace(/\\[(.+?)\\]\\(.+?\\)/g, '$1') // Remove links [text](url)\n    .replace(/^\\s*[-*+]\\s/gm, '')     // Remove bullet points\n    .replace(/^\\s*\\d+\\.\\s/gm, '')     // Remove numbered lists\n    \n  // Remove common AI metadata phrases\n  cleaned = cleaned\n    .replace(/^(Response|Output|Result|Text):\\s*/gi, '')\n    .replace(/^(Assistant|AI|Bot|Dr\\.?\\s*Sarah):\\s*/gim, '')\n    .replace(/\\(AI-generated\\)/gi, '')\n    .replace(/\\[INST\\].*?\\[\\/INST\\]/g, '')\n    .replace(/<<<.*?>>>/g, '')\n    \n  // Remove excessive whitespace\n  cleaned = cleaned\n    .replace(/\\n{3,}/g, '\\n\\n')       // Max 2 line breaks\n    .replace(/\\s{2,}/g, ' ')          // Multiple spaces to single\n    .trim();\n    \n  // Remove any remaining JSON-like structures\n  cleaned = cleaned.replace(/\\{[^}]*\\}/g, '');\n  cleaned = cleaned.replace(/\\[[^\\]]*\\]/g, '');\n  \n  return cleaned;\n}\n\n// Get the cleaned text\nlet cleanText = extractPlainText(rawOutput);\n\n// If still too structured, try to extract just the main message\nif (cleanText.includes('esi_level') || cleanText.includes('triage_category') || cleanText.includes('severity')) {\n  // Tool returned structured data, extract just the readable parts\n  const lines = cleanText.split('\\n');\n  cleanText = lines\n    .filter(line => {\n      const lower = line.toLowerCase();\n      return !lower.includes('level:') && \n             !lower.includes('score:') && \n             !lower.includes('category:') &&\n             !lower.includes('boolean') &&\n             !lower.includes('true') &&\n             !lower.includes('false') &&\n             line.length > 10; // Keep only meaningful lines\n    })\n    .join(' ');\n}\n\n// Final cleanup\ncleanText = cleanText\n  .replace(/\\s+/g, ' ')\n  .trim();\n\n// Return clean output\nreturn {\n  clean_text: cleanText,\n  original_length: rawOutput.length,\n  cleaned_length: cleanText.length\n};\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3792,
+        304
+      ],
+      "id": "666d0f72-10a1-452f-8522-56a1401d6010",
+      "name": "Clear output"
+    },
+    {
+      "parameters": {
+        "operation": "sendVideo",
+        "chatId": "={{ $('patient context').first().json.patient_id }}",
+        "file": "={{ $json.result_url }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        6848,
+        384
+      ],
+      "id": "0cc9966c-9913-4c9f-b358-706b985bc9b3",
+      "name": "Send a video",
+      "webhookId": "YOUR_WEBHOOK_ID_HERE",
+      "credentials": {
+        "telegramApi": {
+          "id": "YOUR_CREDENTIAL_ID_HERE",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.heygen.com/v2/video/generate",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Api-key",
+              "value": "YOUR_API_KEY_HERE"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"video_inputs\": [{\n    \"character\": {\n      \"type\": \"avatar\",\n      \"avatar_id\": \"Kristin_public_2_20240108\",\n      \"avatar_style\": \"normal\"\n    },\n    \"voice\": {\n      \"type\": \"text\",\n      \"input_text\": {{ JSON.stringify($json.clean_text) }},\n      \"voice_id\": \"e0cc82c22f414c95b1f25696c732f058\"\n    }\n  }],\n  \"dimension\": {\n    \"width\": 1280,\n    \"height\": 720\n  },\n  \"test\": false\n}\n\n\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        5728,
+        800
+      ],
+      "id": "bc09d233-783c-4f91-ab7a-daf9841cebb9",
+      "name": "HTTP Request4"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.heygen.com/v1/video_status.get?video_id={{ $json.data.video_id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Api-key",
+              "value": "YOUR_API_KEY_HERE"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        5920,
+        800
+      ],
+      "id": "ca6f4d44-9c5f-4aec-9ebf-6855fefbc219",
+      "name": "HTTP Request5"
+    },
+    {
+      "parameters": {
+        "content": "## D-ID\n",
+        "height": 288,
+        "width": 544
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        5408,
+        288
+      ],
+      "typeVersion": 1,
+      "id": "e51c2639-2e1b-40f7-ad80-d7fcf8cda3e1",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## Heygen",
+        "height": 304,
+        "width": 624
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        5680,
+        720
+      ],
+      "typeVersion": 1,
+      "id": "3e41bffe-ef09-47f0-95df-5929b6c725a6",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.d-id.com/talks",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Basic YOUR_AUTH_TOKEN_HERE"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"source_url\": \"https://i.postimg.cc/bDQwxLyG/download-1.jpg\",\n  \"script\": {\n    \"type\": \"audio\",\n    \"audio_url\": \"{{ $json.audio_url }}\" \n  },\n  \"config\": {\n    \"fluent\": true,\n    \"pad_audio\": 0.1,\n    \"result_format\": \"mp4\",\n    \"aspect_ratio\": \"16:9\"\n  }\n}\n",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        5424,
+        352
+      ],
+      "id": "93b2b47e-5a69-4231-a78d-8d14b40635d1",
+      "name": "d-id request"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.d-id.com/talks/{{ $json.id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Basic YOUR_AUTH_TOKEN_HERE"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        5888,
+        368
+      ],
+      "id": "8764693f-3fff-436c-a039-b673d16311e3",
+      "name": "d-id status"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.data.video_url }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        6128,
+        800
+      ],
+      "id": "9702a043-19ed-40f8-b395-19b7a50d5606",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "amount": 12
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        5632,
+        352
+      ],
+      "id": "f5d87bd8-6cf8-464b-a859-f6f714a42f81",
+      "name": "Wait",
+      "webhookId": "YOUR_WEBHOOK_ID_HERE"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ab2086dc-a68c-482d-8303-c8bc1f6350ab",
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "done",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        6256,
+        400
+      ],
+      "id": "c6ed956d-7046-4731-a90e-e67b50bac04d",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "resource": "speech",
+        "voice": {
+          "__rl": true,
+          "value": "6IQ4bReJUgCjtH4VoGEC",
+          "mode": "list",
+          "cachedResultName": "Doofie boi"
+        },
+        "text": "={{ $json.clean_text }}",
+        "additionalOptions": {},
+        "requestOptions": {}
+      },
+      "type": "@elevenlabs/n8n-nodes-elevenlabs.elevenLabs",
+      "typeVersion": 1,
+      "position": [
+        5232,
+        720
+      ],
+      "id": "674236d2-10ff-4f35-84ab-f4875a53f713",
+      "name": "Convert text to speech",
+      "credentials": {
+        "elevenLabsApi": {
+          "id": "YOUR_CREDENTIAL_ID_HERE",
+          "name": "ElevenLabs account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Appointment System": {
+      "main": [
+        [
+          {
+            "node": "Clear output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PrepareInput": {
+      "main": [
+        [
+          {
+            "node": "Text Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Appointment System",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Get a file1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get a file2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get a file",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "PrepareInput",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Audio Prompt": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Text Prompt": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Audio": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "response": {
+      "main": [
+        [
+          {
+            "node": "Generate Audio",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "d-id request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Send an audio file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If PDF File": {
+      "main": [
+        [
+          {
+            "node": "Extract from PDF File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from PDF File": {
+      "main": [
+        [
+          {
+            "node": "Document Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Document Prompt": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Image Prompt": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "patient context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "patient context": {
+      "main": [
+        [
+          {
+            "node": "Chat Memory Manager",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Appointment System",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chat Memory Manager": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory1": {
+      "ai_memory": [
+        [
+          {
+            "node": "Chat Memory Manager",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a file1": {
+      "main": [
+        [
+          {
+            "node": "Analyze an image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze an image": {
+      "main": [
+        [
+          {
+            "node": "Image Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a file": {
+      "main": [
+        [
+          {
+            "node": "Transcribe a recording",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Transcribe a recording": {
+      "main": [
+        [
+          {
+            "node": "Audio Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a file2": {
+      "main": [
+        [
+          {
+            "node": "If PDF File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Appointment System",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory2": {
+      "ai_memory": [
+        [
+          {
+            "node": "Triage Specialist Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory3": {
+      "ai_memory": [
+        [
+          {
+            "node": "Symptom analyzer tool",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory4": {
+      "ai_memory": [
+        [
+          {
+            "node": "Diagnosis assistant",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory5": {
+      "ai_memory": [
+        [
+          {
+            "node": "Treatment Planner",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Treatment Planner",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Diagnosis assistant",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Symptom analyzer tool",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model4": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Triage Specialist Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send an audio file": {
+      "main": [
+        []
+      ]
+    },
+    "Triage Specialist Agent": {
+      "ai_tool": [
+        [
+          {
+            "node": "Appointment System",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Symptom analyzer tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "Appointment System",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Diagnosis assistant": {
+      "ai_tool": [
+        [
+          {
+            "node": "Appointment System",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Treatment Planner": {
+      "ai_tool": [
+        [
+          {
+            "node": "Appointment System",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model5": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Mental Health Counselor",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory6": {
+      "ai_memory": [
+        [
+          {
+            "node": "Mental Health Counselor",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mental Health Counselor": {
+      "ai_tool": [
+        [
+          {
+            "node": "Appointment System",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prescription manager tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "Appointment System",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model6": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Prescription manager tool",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory7": {
+      "ai_memory": [
+        [
+          {
+            "node": "Prescription manager tool",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clear output": {
+      "main": [
+        [
+          {
+            "node": "response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a video": {
+      "main": [
+        []
+      ]
+    },
+    "HTTP Request4": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request5": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "d-id request": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "d-id status": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        []
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "d-id status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Send a video",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert text to speech": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "ea870640-f069-4f41-a50b-4e6eada17725",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "YOUR_INSTANCE_ID_HERE"
+  },
+  "id": "YOUR_CREDENTIAL_ID_HERE",
+  "tags": []
+}

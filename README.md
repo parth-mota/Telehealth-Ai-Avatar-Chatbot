@@ -4,7 +4,13 @@ A comprehensive workflow that provides AI-powered telehealth consultations via T
 
 ## Demo
 
-https://github.com/parth-mota/Telehealth-Ai-Avatar-Chatbot/assets/135701981/demo.mp4
+<div align="center">
+  <video src="https://github.com/parth-mota/Telehealth-Ai-Avatar-Chatbot/assets/135701981/demo.mp4" controls width="100%" max-width="800px">
+    Your browser does not support the video tag.
+  </video>
+</div>
+
+*Watch the AI doctor in action responding to patient queries*
 
 ## Features
 
